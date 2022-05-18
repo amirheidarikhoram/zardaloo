@@ -18,5 +18,5 @@ async fn login(data: Json<LoginRequestDTO>) -> Result<HttpResponse, CustomError>
 }
 
 pub fn init_routes(config: &mut ServiceConfig) {
-    config.service(scope("/users").service(login));
+    config.service(scope("/user").service(login));
 }

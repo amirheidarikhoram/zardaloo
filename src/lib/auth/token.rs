@@ -1,14 +1,14 @@
 use crate::lib::error::CustomError;
-use crate::statics::{PASSWORD, USERNAME};
+use crate::statics::{PASSWORD, USERNAME, SECRET};
 use actix_web::http::StatusCode;
 use chrono::{DateTime, Duration, Utc};
 use hmac::{Hmac, Mac};
 use jwt::{SignWithKey, VerifyWithKey};
 use sha2::Sha256;
 use std::collections::BTreeMap;
-use std::env;
 
 pub fn sign(username: String, password: String) -> Result<String, CustomError> {
+    dotenv::dotenv().ok();
     if username != *USERNAME || password != *PASSWORD {
         return Err(CustomError::new(
             StatusCode::UNAUTHORIZED,
@@ -17,8 +17,7 @@ pub fn sign(username: String, password: String) -> Result<String, CustomError> {
     }
 
     let utc_now = Utc::now();
-    let secret = env::var("TOKEN_SECRET").expect("Could not get secret from env variables");
-    let key: Hmac<Sha256> = Hmac::new_from_slice(secret.as_bytes()).unwrap();
+    let key: Hmac<Sha256> = Hmac::new_from_slice(SECRET.as_bytes()).unwrap();
     let mut claims = BTreeMap::new();
 
     claims.insert("username", username);
@@ -31,8 +30,7 @@ pub fn sign(username: String, password: String) -> Result<String, CustomError> {
 }
 
 pub fn verify(token: String) -> Result<bool, CustomError> {
-    let secret = env::var("TOKEN_SECRET").expect("Could not get secret from env variables");
-    let key: Hmac<Sha256> = Hmac::new_from_slice(secret.as_bytes()).unwrap();
+    let key: Hmac<Sha256> = Hmac::new_from_slice(SECRET.as_bytes()).unwrap();
     if let Ok(claims) = token.verify_with_key(&key) as Result<BTreeMap<String, String>, _> {
         // check if it's not expired
         let utc_now = Utc::now();

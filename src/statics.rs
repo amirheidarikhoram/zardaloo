@@ -3,7 +3,7 @@ use std::env;
 
 lazy_static! {
     pub static ref USERNAME: String = {
-        let username = env::var("USERNAME").expect("Username must be provided");
+        let username = env::var("USERNAMEX").expect("Username must be provided");
         username
     };
     pub static ref PASSWORD: String = {
@@ -17,10 +17,16 @@ lazy_static! {
             .expect("PORT must be u16");
         port
     };
+    pub static ref SECRET: String = {
+        let secret = env::var("TOKENSECRET")
+            .expect("SECRET must be provided");
+        secret
+    };
 }
 
 pub fn init() {
     lazy_static::initialize(&USERNAME);
     lazy_static::initialize(&PASSWORD);
     lazy_static::initialize(&PORT);
+    lazy_static::initialize(&SECRET);
 }
