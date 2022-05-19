@@ -1,6 +1,6 @@
 use super::dtos::{DataResponseDTO, DeleteRequestDTO, GetRequestDTO, SetRequestDTO};
 use crate::lib::auth::AuthData;
-use crate::lib::CustomError;
+use crate::lib::{CustomError, ToCustomErrorTrait};
 use crate::AppState;
 use zardaloo_db::*;
 
@@ -119,76 +119,96 @@ async fn set_value(
 
     match value_type {
         ValueType::String => {
-            let result = data.set(body.value, body.lifetime);
-            if let Ok(set_value) = result {
-                return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
-                    value: set_value.value,
-                    lifetime: set_value.lifetime,
-                    id: set_value.id,
-                }));
-            }
+            let result = data
+                .set(body.value, body.lifetime)
+                .to_custom_error("Could not do db operations")?;
+
+            return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
+                value: result.value,
+                lifetime: result.lifetime,
+                id: result.id,
+            }));
         }
         ValueType::Integer32 => {
-            let value: i32 = body.value.parse().expect("Expected i32");
-            let result = data.set(value, body.lifetime);
-            if let Ok(set_value) = result {
-                return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
-                    value: set_value.value,
-                    lifetime: set_value.lifetime,
-                    id: set_value.id,
-                }));
-            }
+            let value: i32 = body
+                .value
+                .parse::<i32>()
+                .to_custom_error("Could not parse to i32")?;
+
+            let result = data
+                .set(value, body.lifetime)
+                .to_custom_error("Could not do db operations")?;
+
+            return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
+                value: result.value,
+                lifetime: result.lifetime,
+                id: result.id,
+            }));
         }
         ValueType::Integer64 => {
-            let value: i64 = body.value.parse().expect("Expected i64");
-            let result = data.set(value, body.lifetime);
-            if let Ok(set_value) = result {
-                return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
-                    value: set_value.value,
-                    lifetime: set_value.lifetime,
-                    id: set_value.id,
-                }));
-            }
+            let value: i64 = body
+                .value
+                .parse::<i64>()
+                .to_custom_error("Could not parse to i64")?;
+
+            let result = data
+                .set(value, body.lifetime)
+                .to_custom_error("Could not do db operations")?;
+
+            return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
+                value: result.value,
+                lifetime: result.lifetime,
+                id: result.id,
+            }));
         }
         ValueType::Integer128 => {
-            let value: i128 = body.value.parse().expect("Expected i128");
-            let result = data.set(value, body.lifetime);
-            if let Ok(set_value) = result {
-                return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
-                    value: set_value.value,
-                    lifetime: set_value.lifetime,
-                    id: set_value.id,
-                }));
-            }
+            let value: i128 = body
+                .value
+                .parse::<i128>()
+                .to_custom_error("Could not parse to i128")?;
+
+            let result = data
+                .set(value, body.lifetime)
+                .to_custom_error("Could not do db operations")?;
+
+            return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
+                value: result.value,
+                lifetime: result.lifetime,
+                id: result.id,
+            }));
         }
         ValueType::Float32 => {
-            let value: f32 = body.value.parse().expect("Expected f32");
-            let result = data.set(value, body.lifetime);
-            if let Ok(set_value) = result {
-                return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
-                    value: set_value.value,
-                    lifetime: set_value.lifetime,
-                    id: set_value.id,
-                }));
-            }
+            let value: f32 = body
+                .value
+                .parse::<f32>()
+                .to_custom_error("Could not parse to f32")?;
+            let result = data
+                .set(value, body.lifetime)
+                .to_custom_error("Could not do db operations")?;
+
+            return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
+                value: result.value,
+                lifetime: result.lifetime,
+                id: result.id,
+            }));
         }
         ValueType::Float64 => {
-            let value: f64 = body.value.parse().expect("Expected f64");
-            let result = data.set(value, body.lifetime);
-            if let Ok(set_value) = result {
-                return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
-                    value: set_value.value,
-                    lifetime: set_value.lifetime,
-                    id: set_value.id,
-                }));
-            }
+            let value: f64 = body
+                .value
+                .parse::<f64>()
+                .to_custom_error("Could not parse to f64")?;
+
+            let result = data
+                .set(value, body.lifetime)
+                .to_custom_error("Could not do db operations")?;
+
+            return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
+                value: result.value,
+                lifetime: result.lifetime,
+                id: result.id,
+            }));
         }
     }
-
-    return Err(CustomError::new(
-        StatusCode::BAD_REQUEST,
-        "Value type is not supported".to_string(),
-    ));
 }
 
 #[delete("")]
