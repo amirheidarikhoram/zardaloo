@@ -1,7 +1,11 @@
+use std::sync::MutexGuard;
+
 use super::dtos::{DataResponseDTO, DeleteRequestDTO, GetRequestDTO, SetRequestDTO};
 use crate::lib::auth::AuthData;
-use crate::lib::{CustomError, ToCustomErrorTrait};
+use crate::lib::{CustomError, LifeIndicator, ToCustomErrorTrait};
 use crate::AppState;
+use chrono::Utc;
+use priority_queue::PriorityQueue;
 use zardaloo_db::*;
 
 use actix_web::{
@@ -111,17 +115,22 @@ async fn set_value(
 ) -> Result<HttpResponse, CustomError> {
     let body = body.into_inner();
     let mut data = state.db.lock().unwrap();
-
+    let mut pq = state.pq.lock().unwrap();
     let value_type = match body.value_type {
         Some(_v_type) => _v_type,
         None => ValueType::String,
     };
+
+    handle_life_times(&mut pq, &mut data);
 
     match value_type {
         ValueType::String => {
             let result = data
                 .set(body.value, body.lifetime)
                 .to_custom_error("Could not do db operations")?;
+
+            let li = LifeIndicator::new(result.id.clone(), result.lifetime);
+            pq.push(li.clone(), li.death.timestamp_millis() * -1);
 
             return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
                 value: result.value,
@@ -139,6 +148,9 @@ async fn set_value(
                 .set(value, body.lifetime)
                 .to_custom_error("Could not do db operations")?;
 
+            let li = LifeIndicator::new(result.id.clone(), result.lifetime);
+            pq.push(li.clone(), li.death.timestamp_millis() * -1);
+
             return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
                 value: result.value,
                 lifetime: result.lifetime,
@@ -154,6 +166,9 @@ async fn set_value(
             let result = data
                 .set(value, body.lifetime)
                 .to_custom_error("Could not do db operations")?;
+
+            let li = LifeIndicator::new(result.id.clone(), result.lifetime);
+            pq.push(li.clone(), li.death.timestamp_millis() * -1);
 
             return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
                 value: result.value,
@@ -171,6 +186,9 @@ async fn set_value(
                 .set(value, body.lifetime)
                 .to_custom_error("Could not do db operations")?;
 
+            let li = LifeIndicator::new(result.id.clone(), result.lifetime);
+            pq.push(li.clone(), li.death.timestamp_millis() * -1);
+
             return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
                 value: result.value,
                 lifetime: result.lifetime,
@@ -182,9 +200,13 @@ async fn set_value(
                 .value
                 .parse::<f32>()
                 .to_custom_error("Could not parse to f32")?;
+
             let result = data
                 .set(value, body.lifetime)
                 .to_custom_error("Could not do db operations")?;
+
+            let li = LifeIndicator::new(result.id.clone(), result.lifetime);
+            pq.push(li.clone(), li.death.timestamp_millis() * -1);
 
             return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
                 value: result.value,
@@ -201,6 +223,9 @@ async fn set_value(
             let result = data
                 .set(value, body.lifetime)
                 .to_custom_error("Could not do db operations")?;
+
+            let li = LifeIndicator::new(result.id.clone(), result.lifetime);
+            pq.push(li.clone(), li.death.timestamp_millis() * -1);
 
             return Ok(HttpResponse::build(StatusCode::OK).json(DataResponseDTO {
                 value: result.value,
@@ -309,4 +334,45 @@ pub fn init_routes(config: &mut ServiceConfig) {
             .service(set_value)
             .service(delete_value),
     );
+}
+
+pub fn handle_life_times(pq: &mut PriorityQueue<LifeIndicator, i64>, data: &mut MutexGuard<DbSet>) {
+    loop {
+        if pq.len() == 0 {
+            break;
+        }
+
+        let (head, _) = pq.peek().unwrap();
+        let now = Utc::now();
+        if now > head.death {
+            // has to be remove
+            let id = head.id.clone();
+            let requested_type = id.split("#").collect::<Vec<&str>>();
+            let requested_type = requested_type[1];
+            match requested_type {
+                "str" => {
+                    let _value: Result<DbValue<String>, String> = data.delete(head.id.clone());
+                }
+                "i32" => {
+                    let _value: Result<DbValue<i32>, String> = data.delete(head.id.clone());
+                }
+                "i64" => {
+                    let _value: Result<DbValue<i64>, String> = data.delete(head.id.clone());
+                }
+                "i128" => {
+                    let _value: Result<DbValue<i128>, String> = data.delete(head.id.clone());
+                }
+                "f32" => {
+                    let _value: Result<DbValue<f32>, String> = data.delete(head.id.clone());
+                }
+                "f64" => {
+                    let _value: Result<DbValue<f64>, String> = data.delete(head.id.clone());
+                }
+                _ => {}
+            }
+            pq.pop();
+        } else {
+            break;
+        }
+    }
 }

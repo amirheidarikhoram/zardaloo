@@ -1,6 +1,3 @@
-// ParseFloatError
-// ParseIntError
-
 use std::num::{ParseFloatError, ParseIntError};
 
 use actix_web::http::StatusCode;

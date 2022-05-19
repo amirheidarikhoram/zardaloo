@@ -24,4 +24,5 @@ uuid = { version = "0.6", features = ["serde", "v4"] }
 sha2 = "0.10.2"
 jwt = "0.16.0"
 hmac = "0.12.1"
+priority-queue = "1.2.1"
 zardaloo_db = { path = "zardaloo_db" }

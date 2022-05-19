@@ -5,12 +5,15 @@ pub mod statics;
 use actix_web::{web::Data, App, HttpServer};
 use controllers::{data, user};
 use dotenv::dotenv;
+use lib::LifeIndicator;
+use priority_queue::PriorityQueue;
 use std::sync::Mutex;
 use zardaloo_db::DbSet;
 
 #[allow(dead_code)]
 struct AppState {
     db: Mutex<DbSet>,
+    pq: Mutex<PriorityQueue<LifeIndicator, i64>>,
 }
 
 #[actix_web::main]
@@ -20,6 +23,7 @@ async fn main() -> Result<(), std::io::Error> {
 
     let state = Data::new(AppState {
         db: Mutex::new(DbSet::new()),
+        pq: Mutex::new(PriorityQueue::<LifeIndicator, i64>::new()),
     });
 
     HttpServer::new(move || {
